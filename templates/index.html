@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Linux Infrastructure Health Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #f4f6f8;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .dark {
+            background-color: #1e1e1e;
+            color: white;
+        }
+
+        .container {
+            width: 85%;
+            margin: auto;
+        }
+
+        .cards {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 25%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .dark .card {
+            background: #2b2b2b;
+        }
+
+        .big-number {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        button {
+            padding: 10px 18px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .toggle-btn {
+            background: black;
+            color: white;
+        }
+
+        .dark .toggle-btn {
+            background: white;
+            color: black;
+        }
+
+        canvas {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .dark canvas {
+            background: #2b2b2b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>📊 Linux Infrastructure Health Monitor</h1>
+
+<button class="toggle-btn" onclick="toggleDark()">Toggle Dark Mode</button>
+
+<h2>
+🩺 Health Score:
+<span style="color: {{ 'green' if health >= 70 else 'orange' if health >= 40 else 'red' }}">
+{{ health }}/100
+</span>
+</h2>
+
+<h3>⚡ Performance Mode: {{ mode }}</h3>
+
+<div class="cards">
+    <div class="card">
+        <h3>CPU</h3>
+        <div class="big-number">{{ data[-1]["CPU%"] }}%</div>
+    </div>
+    <div class="card">
+        <h3>Memory</h3>
+        <div class="big-number">{{ data[-1]["Memory%"] }}%</div>
+    </div>
+    <div class="card">
+        <h3>Disk</h3>
+        <div class="big-number">{{ data[-1]["Disk%"] }}%</div>
+    </div>
+</div>
+
+<hr>
+
+<h2>🧠 System Insights</h2>
+
+{% if insights %}
+<ul style="color:red;">
+    {% for insight in insights %}
+        <li>{{ insight }}</li>
+    {% endfor %}
+</ul>
+{% else %}
+<p style="color:green;">All systems stable</p>
+{% endif %}
+
+<hr>
+
+<button onclick="showChart('cpu')">CPU</button>
+<button onclick="showChart('memory')">Memory</button>
+<button onclick="showChart('disk')">Disk</button>
+<button onclick="showChart('all')">Combined</button>
+
+<br><br>
+
+<canvas id="chart" width="900" height="400"></canvas>
+
+</div>
+
+<script>
+const data = {{ data | tojson }};
+
+const timestamps = data.map(d => d.Timestamp);
+const cpu = data.map(d => d["CPU%"]);
+const memory = data.map(d => d["Memory%"]);
+const disk = data.map(d => d["Disk%"]);
+
+let chart;
+
+function showChart(type) {
+    if (chart) chart.destroy();
+
+    let datasets = [];
+
+    if (type === "cpu" || type === "all") {
+        datasets.push({ label: "CPU %", data: cpu, borderWidth: 2 });
+    }
+
+    if (type === "memory" || type === "all") {
+        datasets.push({ label: "Memory %", data: memory, borderWidth: 2 });
+    }
+
+    if (type === "disk" || type === "all") {
+        datasets.push({ label: "Disk %", data: disk, borderWidth: 2 });
+    }
+
+    chart = new Chart(document.getElementById("chart"), {
+        type: "line",
+        data: { labels: timestamps, datasets: datasets }
+    });
+}
+
+function toggleDark() {
+    document.body.classList.toggle("dark");
+}
+
+showChart("all");
+</script>
+
+</body>
+</html>
